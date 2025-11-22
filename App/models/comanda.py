@@ -6,13 +6,15 @@ from App.db.connection import Base
 class Comanda(Base):
     __tablename__ = "comandas"
 
-    id = Column(Integer, primary_key=True, index=True)
-    # AQUI ESTÁ O SEGREDO: Linkamos com o id da tabela clientes
+    # --- COLUNAS ESSENCIAIS (RESTAURADAS) ---
+    id = Column(Integer, primary_key=True, index=True) # A CHAVE PRIMÁRIA QUE ESTAVA FALTANDO!
     cliente_id = Column(Integer, ForeignKey("clientes.id")) 
     
-    status = Column(String, default="ABERTA") # Status: ABERTA, FECHADA, PAGA
-    valor_total = Column(Float, default=0.0)  # Começa zerada
-    criado_em = Column(DateTime(timezone=True), server_default=func.now()) # Data automática
-
-    # Isso permite que, acessando a comanda, a gente saiba os dados do cliente automaticamente
+    status = Column(String, default="ABERTA") 
+    valor_total = Column(Float, default=0.0)  
+    criado_em = Column(DateTime(timezone=True), server_default=func.now()) 
+    # ----------------------------------------
+    
+    # Relacionamentos
+    itens = relationship("ItemComanda")
     cliente = relationship("Cliente")

@@ -1,0 +1,71 @@
+version: 2.1
+
+# Definição dos Ambientes (Docker)
+executors:
+  python-env:
+    docker:
+      - image: cimg/python:3.11
+    working_directory: ~/repo
+
+# Definição dos Jobs (Tarefas da Pipeline)
+jobs:
+  # Job 1: Setup e Instalação (Preparação)
+  setup_dependencies:
+    executor: python-env
+    steps:
+      - checkout
+      - run:
+          name: Instalar Poetry
+          command: curl -sSL https://install.python-poetry.org | python3 -
+      - run:
+          name: Instalar Dependências
+          command: poetry install
+      - persist_to_workspace:
+          root: ~/repo
+          paths: .
+
+  # Job 2: Verificação de Estilo (Linting)
+  code_linting:
+    executor: python-env
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run:
+          name: Verificar Padrão de Código (Ruff)
+          command: poetry run ruff check .
+
+  # Job 3: Testes Unitários
+  unit_tests:
+    executor: python-env
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run:
+          name: Rodar Testes (Pytest)
+          command: poetry run pytest
+
+  # Job 4: Build Simulado
+  build_check:
+    executor: python-env
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run:
+          name: Verificar Build
+          command: poetry build
+
+# Orquestração da Pipeline
+workflows:
+  version: 2
+  pipeline_pesqueiro:
+    jobs:
+      - setup_dependencies
+      - code_linting:
+          requires:
+            - setup_dependencies
+      - unit_tests:
+          requires:
+            - setup_dependencies
+      - build_check:
+          requires:
+            - unit_tests

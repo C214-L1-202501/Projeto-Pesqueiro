@@ -26,6 +26,10 @@
 
         .painel-comanda { background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 15px; border-radius: 4px; text-align: center; display: none; }
         .valor-gigante { font-size: 3em; font-weight: bold; color: var(--dark); display: block; margin: 10px 0; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
+        thead { background-color: #f1f1f1; }
     </style>
 </head>
 <body>
@@ -95,6 +99,17 @@
             </div>
         </div>
     </div>
+    
+    <div class="card" style="margin-top: 20px;">
+        <h2>Detalhe dos Pedidos</h2>
+        <table>
+            <thead>
+                <tr><th>Produto</th><th>Qtd</th><th>Preço Un.</th><th>Total Item</th></tr>
+            </thead>
+            <tbody id="listaPedidosDetalhe">
+                </tbody>
+        </table>
+    </div>
 
     <script>
         const API = "http://127.0.0.1:8000";
@@ -149,6 +164,31 @@
             }
         }
 
+        // --- NOVO: Monta a lista de pedidos na tabela ---
+        function montarListaPedidos(itens) {
+            const lista = document.getElementById('listaPedidosDetalhe');
+            lista.innerHTML = "";
+            
+            if (!itens || itens.length === 0) {
+                lista.innerHTML = "<tr><td colspan='4'>Nenhum pedido lançado.</td></tr>";
+                return;
+            }
+
+            itens.forEach(item => {
+                // toFixed(2) garante que o valor tenha duas casas decimais (R$ 10.00)
+                const totalItem = (item.quantidade * item.preco_unitario).toFixed(2);
+                lista.innerHTML += `
+                    <tr>
+                        <td>${item.nome_produto}</td>
+                        <td>${item.quantidade}</td>
+                        <td>R$ ${item.preco_unitario.toFixed(2)}</td>
+                        <td>R$ ${totalItem}</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        // --- FUNÇÃO ATUALIZADA: Busca a comanda e chama a renderização ---
         async function buscarComanda() {
             const id = document.getElementById("idComandaInput").value;
             if(!id) return alert("Digite o ID");
@@ -162,34 +202,39 @@
             }
         }
 
+        // --- FUNÇÃO ATUALIZADA: Carrega o painel (Visor e Lista) ---
         function carregarPainel(data) {
             document.getElementById("painelAtivo").style.display = "block";
             document.getElementById("lblComandaID").innerText = "#" + data.id;
             document.getElementById("idComandaInput").value = data.id; 
             
-            // Formata Dinheiro
+            // 1. Atualiza o Valor Grande
             const valor = data.valor_total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             document.getElementById("lblTotal").innerText = valor;
+            
+            // 2. Monta a lista de itens
+            montarListaPedidos(data.itens); 
         }
 
         async function lancarItem() {
             const comanda_id = document.getElementById("idComandaInput").value;
             const nome_produto = document.getElementById("produtoNome").value;
-            const quantidade = document.getElementById("qtdProd").value;
-            const preco_unitario = document.getElementById("precoProd").value;
+            const quantidade = parseFloat(document.getElementById("qtdProd").value);
+            const preco_unitario = parseFloat(document.getElementById("precoProd").value);
 
             if(!comanda_id) return alert("Selecione ou Busque uma comanda antes!");
 
             const res = await fetch(API + "/itens", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({ comanda_id, nome_produto, quantidade, preco_unitario })
+                // Converte para Inteiro e Float para a API
+                body: JSON.stringify({ comanda_id: parseInt(comanda_id), nome_produto, quantidade, preco_unitario })
             });
 
             if(res.ok) {
-                // Recarrega o painel para mostrar o valor novo somado
-                buscarComanda(); 
                 alert("Item adicionado com sucesso!");
+                // Busca a comanda novamente para atualizar o painel
+                buscarComanda(); 
             } else {
                 alert("Erro ao lançar item!");
             }
