@@ -80,7 +80,9 @@ def adicionar_item(item: ItemCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Comanda não encontrada")
     if comanda.status != "ABERTA":
         raise HTTPException(status_code=400, detail="Comanda já está fechada!")
-
+    if item.preco_unitario < 0.0:
+        raise HTTPException(status_code=400, detail="Valor inválido.")
+    
     db_item = ItemComanda(**item.model_dump())
     db.add(db_item)
     comanda.valor_total += (item.quantidade * item.preco_unitario)
