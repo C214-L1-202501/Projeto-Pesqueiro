@@ -66,7 +66,11 @@ def abrir_comanda(comanda: ComandaCreate, db: Session = Depends(get_db)):
     cliente = db.query(Cliente).filter(Cliente.id == comanda.cliente_id).first()
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
-    
+
+    comanda_exists = db.query(Comanda).filter(Comanda.cliente_id == cliente.id).first()
+    if comanda_exists:
+        raise HTTPException(status_code=422, detail="Erro, este cliente já possui uma comanda cadastrada.")
+
     db_comanda = Comanda(cliente_id=comanda.cliente_id)
     db.add(db_comanda)
     db.commit()
@@ -90,7 +94,7 @@ def adicionar_item(item: ItemCreate, db: Session = Depends(get_db)):
     if comanda.status != "ABERTA":
         raise HTTPException(status_code=400, detail="Comanda já está fechada!")
     if item.preco_unitario < 0.0:
-        raise HTTPException(status_code=400, detail="Valor inválido.")
+        raise HTTPException(status_code=422, detail="Valor inválido.")
     
     db_item = ItemComanda(**item.model_dump())
     db.add(db_item)

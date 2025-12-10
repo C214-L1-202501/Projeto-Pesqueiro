@@ -14,12 +14,19 @@ jobs:
     executor: python-env
     steps:
       - checkout
+
       - run:
           name: Instalar Poetry
-          command: curl -sSL https://install.python-poetry.org | python3 -
+          command: |
+            curl -sSL https://install.python-poetry.org | python3 -
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> $BASH_ENV
+
       - run:
           name: Instalar Dependências
-          command: poetry install
+          command: |
+            source $BASH_ENV
+            poetry install
+
       - persist_to_workspace:
           root: ~/repo
           paths: .
@@ -30,9 +37,24 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
+
+      - run:
+          name: Instalar Poetry
+          command: |
+            curl -sSL https://install.python-poetry.org | python3 -
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> $BASH_ENV
+
+      - run:
+          name: Instalar Dependências (para Lint)
+          command: |
+            source $BASH_ENV
+            poetry install
+
       - run:
           name: Verificar Padrão de Código (Ruff)
-          command: poetry run ruff check .
+          command: |
+            source $BASH_ENV
+            poetry run ruff check .
 
   # Job 3: Testes Unitários
   unit_tests:
@@ -40,19 +62,49 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
+
+      - run:
+          name: Instalar Poetry
+          command: |
+            curl -sSL https://install.python-poetry.org | python3 -
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> $BASH_ENV
+
+      - run:
+          name: Instalar Dependências (para Testes)
+          command: |
+            source $BASH_ENV
+            poetry install
+
       - run:
           name: Rodar Testes (Pytest)
-          command: poetry run pytest
+          command: |
+            source $BASH_ENV
+            poetry run pytest
 
-  # Job 4: Build Simulado
+  # Job 4: Build (Poetry Build)
   build_check:
     executor: python-env
     steps:
       - attach_workspace:
           at: ~/repo
+
       - run:
-          name: Verificar Build
-          command: poetry build
+          name: Instalar Poetry
+          command: |
+            curl -sSL https://install.python-poetry.org | python3 -
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> $BASH_ENV
+
+      - run:
+          name: Instalar Dependências (para Build)
+          command: |
+            source $BASH_ENV
+            poetry install
+
+      - run:
+          name: Verificar Build (poetry build)
+          command: |
+            source $BASH_ENV
+            poetry build
 
 # Orquestração da Pipeline
 workflows:

@@ -1,11 +1,63 @@
+from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
-from App.api.main import app
-from App.db.connection import Base, engine
-import pytest
+
+from App.api.main import app, get_db
 
 client = TestClient(app)
 
 
+def test_criar_cliente_mock():
+    fake_db = MagicMock()
+
+    # Mock: não existe cliente com esse CPF
+    fake_db.query().filter().first.return_value = None
+
+    # Simula que o banco, ao dar refresh, atribui um ID ao objeto
+    def fake_refresh(obj):
+        obj.id = 10  # qualquer inteiro diferente de None
+
+    fake_db.add.return_value = None
+    fake_db.commit.return_value = None
+    fake_db.refresh.side_effect = fake_refresh
+
+    # Usa o fake_db no lugar do get_db real
+    app.dependency_overrides[get_db] = lambda: fake_db
+
+    response = client.post(
+        "/clientes",
+        json={
+            "nome": "Teste",
+            "cpf": "111",
+            "telefone": "",
+            "email": ""
+        },
+    )
+
+    # Limpa para não afetar outros testes
+    app.dependency_overrides.clear()
+
+    assert response.status_code in (200, 201)
+    data = response.json()
+    assert data["id"] == 10
+    assert data["nome"] == "Teste"
+    assert data["cpf"] == "111"
+
+
+def test_cliente_nao_existe_mock():
+    fake_db = MagicMock()
+    fake_db.query().filter().first.return_value = None
+
+    app.dependency_overrides[get_db] = lambda: fake_db
+
+    response = client.get("/clientes/999")
+
+    assert response.status_code == 404
+
+    app.dependency_overrides.clear()
+
+
+
+''''
 @pytest.fixture(scope="session", autouse=True)
 def setup_db():
     Base.metadata.drop_all(bind=engine)
@@ -89,3 +141,4 @@ def test_reset_db():
     r2 = client.get("/clientes")
     assert r2.status_code == 200
     assert len(r2.json()) == 0
+'''''

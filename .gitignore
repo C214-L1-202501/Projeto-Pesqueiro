@@ -1,0 +1,62 @@
+# -------------------------
+# Arquivos Python gerados
+# -------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# -------------------------
+# Ambientes virtuais
+# -------------------------
+.venv/
+venv/
+env/
+.env
+.env.*
+.python-version
+
+# -------------------------
+# Artefatos de build
+# -------------------------
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# -------------------------
+# Cache de ferramentas
+# -------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+.coverage
+htmlcov/
+
+# -------------------------
+# Bancos de dados locais
+# (SQLite usados em desenvolvimento/teste)
+# -------------------------
+*.db
+*.sqlite3
+
+# -------------------------
+# Logs
+# -------------------------
+*.log
+
+# -------------------------
+# Arquivos de sistema / editor
+# -------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# -------------------------
+# Node / front (se um dia tiver)
+# -------------------------
+node_modules/

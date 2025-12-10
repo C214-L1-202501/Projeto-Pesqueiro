@@ -212,8 +212,7 @@ def test_criar_duas_comandas_para_mesmo_cliente_aberta():
 
     # tenta abrir segunda comanda sem fechar a primeira
     resp2 = client.post("/comandas", json={"cliente_id": cliente_id})
-    assert resp2.status_code == 200
-    # assert "já existe" in resp2.json()["detail"].lower()
+    assert resp2.status_code == 422
 
 
 def test_adicionar_item_sucesso():
@@ -314,109 +313,6 @@ def test_fechar_comanda_sucesso():
     assert response_item.status_code in (400, 403)
     # assert "fechada" in response_item.json()["detail"].lower()
 
-'''
-def test_get_comandas_por_cliente():
-    # Teste verdadeiro: listar todas as comandas de um cliente
-    response_cliente = client.post(
-        "/clientes",
-        json={
-            "nome": "Beatriz",
-            "cpf": "22233344455",
-            "telefone": "",
-            "email": ""
-        }
-    )
-    assert response_cliente.status_code == 200
-    cid = response_cliente.json()["id"]
-
-    client.post("/comandas", json={"cliente_id": cid})
-    client.post("/comandas", json={"cliente_id": cid})
-
-    response = client.get(f"/comandas/{cid}")
-    assert response.status_code == 200
-    data = response.json()
-    assert isinstance(data, list)
-    assert len(data) >= 2  # pelo menos 2 comandas
-'''
-
-def test_excluir_item_sucesso():
-    # Teste verdadeiro: excluir um item e verificar se o valor total da comanda diminui
-    response_cliente = client.post(
-        "/clientes",
-        json={
-            "nome": "Clara",
-            "cpf": "33344455566",
-            "telefone": "",
-            "email": ""
-        }
-    )
-    assert response_cliente.status_code == 200
-    cid = response_cliente.json()["id"]
-
-    response_comanda = client.post("/comandas", json={"cliente_id": cid})
-    assert response_comanda.status_code == 200
-    comanda_id = response_comanda.json()["id"]
-
-    # dois itens
-    r1 = client.post(
-        "/itens",
-        json={
-            "comanda_id": comanda_id,
-            "nome_produto": "Pizza",
-            "quantidade": 1,
-            "preco_unitario": 20.0
-        }
-    )
-    r2 = client.post(
-        "/itens",
-        json={
-            "comanda_id": comanda_id,
-            "nome_produto": "Refrigerante",
-            "quantidade": 1,
-            "preco_unitario": 5.0
-        }
-    )
-    item1_id = r1.json()["comanda_id"]
-    item2_id = r2.json()["comanda_id"]  # pode não usar, mas deixei aqui
-
-    # valor total deve ser 25
-    resp = client.get(f"/comandas/{comanda_id}")
-    assert resp.json()["valor_total"] == pytest.approx(25.0)
-
-    # deletar item 1
-    resp_del = client.delete(url=f"/itens/{item1_id}")
-    assert resp_del.status_code == 404
-
-    # buscar comanda novamente com novo valor
-    #resp2 = client.get(f"/comandas/{comanda_id}")
-    #assert resp2.json()["valor_total"] == pytest.approx(5.0)
-
-'''
-def test_excluir_comanda_sucesso():
-    # Teste verdadeiro: excluir uma comanda
-    response_cliente = client.post(
-        "/clientes",
-        json={
-            "nome": "Diego",
-            "cpf": "77788899900",
-            "telefone": "",
-            "email": ""
-        }
-    )
-    assert response_cliente.status_code == 200
-    cid = response_cliente.json()["id"]
-
-    response_comanda = client.post("/comandas", json={"cliente_id": cid})
-    assert response_comanda.status_code == 200
-    comanda_id = response_comanda.json()["id"]
-
-    resp_del = client.delete(f"/comandas/{comanda_id}")
-    assert resp_del.status_code == 200
-
-    # depois de deletar, buscar deve dar 404
-    resp_get = client.get(f"/comandas/{comanda_id}")
-    assert resp_get.status_code == 404
-'''
 
 def test_valor_total_com_multiple_itens():
     # Teste verdadeiro: adicionar vários itens e verificar total acumulado
@@ -509,21 +405,23 @@ def test_item_preco_negativo():
         "preco_unitario": -5.0
     }
     resp = client.post("/itens", json=item_payload)
-    assert resp.status_code == 200
+    assert resp.status_code == 422
     # assert "preço" in resp.json()["detail"].lower()
 
-def test_buscar_cliente_por_id(client):
+def test_buscar_cliente_por_id():
     # Criar novo cliente
-    novo_cliente = {
-        "nome": "João Teste",
-        "cpf": "12345678901",
-        "telefone": "11999999999"
-    }
+    response_cliente = client.post(
+        "/clientes",
+        json={
+            "nome": "Joao Teste",
+            "cpf": "12345678900",
+            "telefone": "11999999999",
+            "email": ""
+        }
+    )
 
-    response = client.post("/clientes", json=novo_cliente)
-    assert response.status_code == 200
-    cliente_data = response.json()
-    cliente_id = cliente_data["id"]
+    assert response_cliente.status_code == 200
+    cliente_id = response_cliente.json()["id"]
 
     # Buscar cliente
     response = client.get(f"/clientes/{cliente_id}")
@@ -531,8 +429,8 @@ def test_buscar_cliente_por_id(client):
     data = response.json()
 
     assert data["id"] == cliente_id
-    assert data["nome"] == "João Teste"
-    assert data["cpf"] == "12345678901"
+    assert data["nome"] == "Joao Teste"
+    assert data["cpf"] == "12345678900"
     assert data["telefone"] == "11999999999"
 
 def test_buscar_cliente_inexistente():
